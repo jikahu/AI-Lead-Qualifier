@@ -1,0 +1,242 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #080d1f;
+  --foreground: #ededf2;
+  --card: #0d1430;
+  --card-foreground: #ededf2;
+  --popover: #0d1430;
+  --popover-foreground: #ededf2;
+  --primary: #818cf8;
+  --primary-foreground: #0a0a23;
+  --secondary: #1a2342;
+  --secondary-foreground: #ededf2;
+  --muted: #121a36;
+  --muted-foreground: #8390ad;
+  --accent: #1a2342;
+  --accent-foreground: #ededf2;
+  --destructive: #ef4444;
+  --border: #1a2342;
+  --input: #121a36;
+  --ring: #818cf8;
+  --radius: 0.625rem;
+
+  /* Tier accents — amber / indigo / slate */
+  --hot: #fbbf24;
+  --hot-foreground: #1a1308;
+  --warm: #818cf8;
+  --warm-foreground: #0f0f29;
+  --cold: #94a3b8;
+  --cold-foreground: #0f1521;
+
+  --chart-1: #818cf8;
+  --chart-2: #fbbf24;
+  --chart-3: #94a3b8;
+  --chart-4: #a78bfa;
+  --chart-5: #cbd5e1;
+
+  --sidebar: #0d1430;
+  --sidebar-foreground: #ededf2;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0a0a23;
+  --sidebar-accent: #1a2342;
+  --sidebar-accent-foreground: #ededf2;
+  --sidebar-border: #1a2342;
+  --sidebar-ring: #818cf8;
+}
+
+.dark {
+  --background: #080d1f;
+  --foreground: #ededf2;
+  --card: #0d1430;
+  --card-foreground: #ededf2;
+  --popover: #0d1430;
+  --popover-foreground: #ededf2;
+  --primary: #818cf8;
+  --primary-foreground: #0a0a23;
+  --secondary: #1a2342;
+  --secondary-foreground: #ededf2;
+  --muted: #121a36;
+  --muted-foreground: #8390ad;
+  --accent: #1a2342;
+  --accent-foreground: #ededf2;
+  --destructive: #ef4444;
+  --border: #1a2342;
+  --input: #121a36;
+  --ring: #818cf8;
+
+  --hot: #fbbf24;
+  --hot-foreground: #1a1308;
+  --warm: #818cf8;
+  --warm-foreground: #0f0f29;
+  --cold: #94a3b8;
+  --cold-foreground: #0f1521;
+
+  --chart-1: #818cf8;
+  --chart-2: #fbbf24;
+  --chart-3: #94a3b8;
+  --chart-4: #a78bfa;
+  --chart-5: #cbd5e1;
+
+  --sidebar: #0d1430;
+  --sidebar-foreground: #ededf2;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0a0a23;
+  --sidebar-accent: #1a2342;
+  --sidebar-accent-foreground: #ededf2;
+  --sidebar-border: #1a2342;
+  --sidebar-ring: #818cf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-hot: var(--hot);
+  --color-hot-foreground: var(--hot-foreground);
+  --color-warm: var(--warm);
+  --color-warm-foreground: var(--warm-foreground);
+  --color-cold: var(--cold);
+  --color-cold-foreground: var(--cold-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-dm-sans);
+  --font-display: var(--font-instrument);
+  --font-heading: var(--font-instrument);
+  --font-mono: var(--font-mono-jb);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-color: var(--background);
+    /* Subtle grid + indigo halo glow up top + faint amber glow bottom-right */
+    background-image:
+      linear-gradient(
+        to right,
+        rgba(129, 140, 248, 0.045) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        rgba(129, 140, 248, 0.045) 1px,
+        transparent 1px
+      ),
+      radial-gradient(
+        ellipse 80% 50% at 50% -10%,
+        rgba(129, 140, 248, 0.12),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 100%,
+        rgba(251, 191, 36, 0.045),
+        transparent 70%
+      );
+    background-size:
+      48px 48px,
+      48px 48px,
+      100% 100%,
+      100% 100%;
+    background-attachment: fixed;
+  }
+}
+
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status indicator dot */
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Tier square indicator (next to tier text) */
+.tier-square {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.pulse-soft {
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+/* Underline accent for editorial moments */
+.editorial-underline {
+  background-image: linear-gradient(
+    to right,
+    var(--primary) 0%,
+    var(--primary) 100%
+  );
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 3px;
+  padding-bottom: 0.05em;
+}
