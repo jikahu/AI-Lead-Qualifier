@@ -1,20 +1,21 @@
-import { schemaTask } from "@trigger.dev/sdk";
-import { OPENAI_MODEL, openai } from "../tools";
+import { metadata, schemaTask } from "@trigger.dev/sdk";
+import { OPENAI_MODEL, openai, supabaseAdmin } from "../tools";
 import {
-  LeadInputSchema,
+  LeadTaskInputSchema,
   QualificationSchema,
   type Qualification,
 } from "./qualify-lead.schema";
 
 const SYSTEM_PROMPT = `You are a B2B sales qualification analyst.
 
-Given a lead's information, return a JSON object that scores the lead from 0 (cold) to 100 (hot) and explains your reasoning.
-
-Output JSON shape:
+OUTPUT FORMAT — follow exactly:
+1. First, write 1–3 sentences of your analytical read in plain prose. No headings, no preamble, just the analyst's voice.
+2. Then write a line containing only: ---
+3. Then output a single JSON object (no markdown, no code fences) matching this shape:
 {
   "score": number 0-100,
   "tier": "hot" | "warm" | "cold",
-  "reasoning": "1-3 sentence explanation",
+  "reasoning": "1-3 sentence explanation (same content as the prose above)",
   "signals": {
     "positives": ["bullet", "bullet"],
     "concerns": ["bullet", "bullet"]
@@ -22,7 +23,7 @@ Output JSON shape:
   "suggestedNextStep": "1 sentence action for the sales rep"
 }
 
-Rules:
+RULES:
 - "hot" = score >= 70, "warm" = 40-69, "cold" = < 40.
 - BUDGET RANGE is one of the strongest signals. $250K+ with a senior title and tight timeline is almost always hot. "Under $10K" or "Not disclosed" leans cold unless other signals are very strong.
 - TIMELINE: "Immediate (< 1 month)" or "1 – 3 months" suggests active buying intent (hot). "12+ months" or "Just exploring" leans cold/warm.
@@ -33,9 +34,18 @@ Rules:
 - Personal email domains (gmail, yahoo, outlook) are a mild concern, not a dealbreaker.
 - Be concise and specific. No marketing fluff.`;
 
+const SEPARATOR = "---";
+
+function stripCodeFences(s: string): string {
+  return s
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+}
+
 export const qualifyLead = schemaTask({
   id: "qualify-lead",
-  schema: LeadInputSchema,
+  schema: LeadTaskInputSchema,
   maxDuration: 120,
   retry: {
     maxAttempts: 3,
@@ -44,20 +54,72 @@ export const qualifyLead = schemaTask({
     maxTimeoutInMs: 10000,
     randomize: true,
   },
-  run: async (lead): Promise<Qualification> => {
-    const completion = await openai.chat.completions.create({
+  run: async (payload, { ctx }): Promise<Qualification> => {
+    const { userId, ...lead } = payload;
+
+    const stream = await openai.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: JSON.stringify(lead) },
       ],
-      response_format: { type: "json_object" },
       temperature: 0.2,
+      stream: true,
     });
 
-    const raw = completion.choices[0]?.message.content;
-    if (!raw) throw new Error("OpenAI returned no content");
+    let buffer = "";
+    let inJson = false;
+    let lastPushed = "";
 
-    return QualificationSchema.parse(JSON.parse(raw));
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content ?? "";
+      if (!delta) continue;
+      buffer += delta;
+
+      if (!inJson) {
+        const sepIdx = buffer.indexOf(SEPARATOR);
+        const prose = (sepIdx === -1 ? buffer : buffer.slice(0, sepIdx)).trim();
+        if (sepIdx !== -1) inJson = true;
+        // Only push when the visible prose actually grew, to avoid spamming metadata.
+        if (prose && prose !== lastPushed) {
+          lastPushed = prose;
+          metadata.set("preview", prose);
+        }
+      }
+    }
+
+    const sepIdx = buffer.indexOf(SEPARATOR);
+    const jsonText =
+      sepIdx !== -1 ? buffer.slice(sepIdx + SEPARATOR.length) : buffer;
+    const parsed = JSON.parse(stripCodeFences(jsonText));
+    const result = QualificationSchema.parse(parsed);
+
+    const { error } = await supabaseAdmin
+      .from("qualifications")
+      .update({
+        status: "completed",
+        result,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("run_id", ctx.run.id)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Failed to persist qualification result", error);
+    }
+
+    return result;
+  },
+  onFailure: async ({ payload, error, ctx }) => {
+    const message = error instanceof Error ? error.message : String(error);
+    await supabaseAdmin
+      .from("qualifications")
+      .update({
+        status: "failed",
+        error: message,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("run_id", ctx.run.id)
+      .eq("user_id", payload.userId);
   },
 });

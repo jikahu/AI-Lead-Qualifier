@@ -26,7 +26,6 @@ import type {
   Qualification,
   Tier,
 } from "../../../../workflows/qualify-lead.schema";
-import type { qualifyLead } from "../../../../workflows/qualify-lead.task";
 
 const STATUS_LABEL: Record<string, string> = {
   QUEUED: "Queued",
@@ -83,7 +82,7 @@ export default function ResultsPage() {
   const runId = params.runId;
   const accessToken = searchParams.get("token") ?? undefined;
 
-  const { run, error: runError } = useRealtimeRun<typeof qualifyLead>(runId, {
+  const { run, error: runError } = useRealtimeRun(runId, {
     accessToken,
     enabled: Boolean(runId && accessToken),
   });
@@ -91,6 +90,10 @@ export default function ResultsPage() {
   const result = run?.output as Qualification | undefined;
   const status = run?.status;
   const score = useCountUp(result?.score);
+  const preview =
+    typeof (run?.metadata as Record<string, unknown> | undefined)?.preview === "string"
+      ? ((run!.metadata as Record<string, unknown>).preview as string)
+      : "";
 
   const isWorking =
     Boolean(status) && !result && !TERMINAL.has(status as string);
@@ -155,6 +158,24 @@ export default function ResultsPage() {
             <Progress value={progressValue} className="h-1.5" />
           </div>
         </Reveal>
+      )}
+
+      {/* ── Live analyst preview while running ───── */}
+      {!result && !failed && preview && (
+        <Card className="mb-10 border-border/70">
+          <CardContent className="px-6 py-7 sm:px-8 sm:py-8">
+            <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+              Analyst's notes — live
+            </p>
+            <p className="font-display text-[20px] italic leading-relaxed text-foreground/90 sm:text-[24px]">
+              {preview}
+              <span
+                aria-hidden
+                className="ml-1 inline-block h-5 w-[2px] animate-pulse bg-primary align-middle"
+              />
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       {runError && (

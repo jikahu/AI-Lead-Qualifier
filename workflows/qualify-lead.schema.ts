@@ -63,6 +63,15 @@ export type CompanySize = (typeof COMPANY_SIZES)[number];
 export type BudgetRange = (typeof BUDGET_RANGES)[number];
 export type Timeline = (typeof TIMELINES)[number];
 
+// The task receives the form input plus the authenticated userId, injected
+// server-side by the /api/qualify route so the task can persist the result
+// against the right user.
+export const LeadTaskInputSchema = LeadInputSchema.extend({
+  userId: z.string().uuid(),
+});
+
+export type LeadTaskInput = z.infer<typeof LeadTaskInputSchema>;
+
 export const QualificationSchema = z.object({
   score: z.number().min(0).max(100),
   tier: z.enum(["hot", "warm", "cold"]),

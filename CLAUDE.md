@@ -130,12 +130,17 @@ Run from the project root. CI is optional — Trigger.dev's CLI handles versioni
 - **Trigger.dev realtime hooks** → https://trigger.dev/docs/realtime/react-hooks
 - **Vercel + Next.js subdirectory deploys** → set Root Directory in Project Settings.
 
+## Auth & persistence
+
+- **Auth**: Supabase email + password, cookie sessions via `@supabase/ssr`. Three Supabase clients live under `frontend/lib/supabase/` (browser, server, proxy). Server Actions in `frontend/app/actions/auth.ts` handle sign in / sign up / sign out.
+- **Route protection**: handled by `frontend/proxy.ts` (Next 16 — `proxy.ts`, *not* `middleware.ts`). Protects `/`, `/results/*`, `/history`, `/history/*`. Anonymous users are redirected to `/login`.
+- **Persistence**: `public.qualifications` table in Supabase, RLS-scoped to the owner. The `/api/qualify` route inserts a `pending` row (anon key + RLS); the Trigger.dev task writes the final result back via `tools/supabase-admin.ts` (service-role key, bypasses RLS). Migration: `supabase/migrations/0001_qualifications.sql`.
+
 ## Out of scope (v1)
 
 These are intentionally **not** built yet. Don't add them speculatively.
 
-- Authentication / user accounts
 - Lead enrichment (company lookup, web search, Clearbit, etc.)
-- Persistence (database, history of past qualifications)
 - Multi-tenant / team support
 - Rate limiting beyond what Trigger.dev provides by default
+- OAuth providers (only email + password for now)
